@@ -10,18 +10,25 @@
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
+
 <style>
 
 body {
+
   font-family: Arial, sans-serif;
   text-align: center;
   padding: 20px;
   background: #f5f5f5;
+
 }
 
+
 h2 {
+
   margin-bottom: 20px;
+
 }
+
 
 #reader {
 
@@ -34,17 +41,53 @@ h2 {
 
 }
 
+
 #resultado {
 
   margin-top: 20px;
-  font-size: 18px;
+  padding: 20px;
   background: white;
-  padding: 15px;
   border-radius: 10px;
+  font-size: 18px;
 
 }
 
+
+.sucesso {
+
+  color: green;
+
+}
+
+
+.erro {
+
+  color: red;
+
+}
+
+
+.aviso {
+
+  color: orange;
+
+}
+
+
+button {
+
+  margin-top: 20px;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+
+}
+
+
 </style>
+
 
 </head>
 
@@ -59,8 +102,19 @@ h2 {
 
 
 <div id="resultado">
+
 Aponte a câmera para o QR Code
+
 </div>
+
+
+
+<button onclick="novaLeitura()" style="display:none" id="btnNova">
+
+Nova leitura
+
+</button>
+
 
 
 
@@ -68,20 +122,44 @@ Aponte a câmera para o QR Code
 
 
 const API = 
+
 "https://script.google.com/macros/s/AKfycbyluiOa5se9-MpMOyaRi-0Ahf2voShFdAdbftTUUAT7Dr98qHZ8-wMeUZKhTMk2MueB7g/exec";
+
+
+
+let processando = false;
+
+let scanner;
 
 
 
 function sucesso(qrCode){
 
 
+
+// Impede múltiplas leituras
+
+if(processando){
+
+  return;
+
+}
+
+
+processando = true;
+
+
+
 document.getElementById("resultado").innerHTML =
-"Consultando participante...";
+"⏳ Consultando participante...";
 
 
-// Extrai somente o ID do participante
+
 let id = qrCode;
 
+
+
+// Extrai somente o ID do QR
 
 if(qrCode.includes("?id=")){
 
@@ -90,31 +168,56 @@ if(qrCode.includes("?id=")){
 }
 
 
-// Envia para o Apps Script
+
 
 fetch(
   API + "?id=" + encodeURIComponent(id)
 )
 
+
+
 .then(response => response.json())
+
 
 
 .then(data => {
 
 
+
 if(data.status){
 
 
+
 document.getElementById("resultado").innerHTML =
 
+
 `
-<h3>✅ ${data.titulo}</h3>
 
-<strong>Nome:</strong> ${data.nome}<br>
+<div class="sucesso">
 
-<strong>Município:</strong> ${data.municipio}<br>
+<h2>✅ ${data.titulo}</h2>
 
-<strong>Horário:</strong> ${new Date(data.horario).toLocaleString("pt-BR")}
+
+<p>
+<strong>Nome:</strong><br>
+${data.nome}
+</p>
+
+
+<p>
+<strong>Município:</strong><br>
+${data.municipio}
+</p>
+
+
+<p>
+<strong>Horário:</strong><br>
+${new Date(data.horario)
+.toLocaleString("pt-BR")}
+</p>
+
+
+</div>
 
 `;
 
@@ -122,21 +225,46 @@ document.getElementById("resultado").innerHTML =
 
 }
 
-else{
+else {
+
 
 
 document.getElementById("resultado").innerHTML =
 
+
 `
-<h3>⚠️ ${data.titulo}</h3>
 
-${data.nome ? "<strong>Nome:</strong> " + data.nome + "<br>" : ""}
+<div class="aviso">
 
+<h2>⚠️ ${data.titulo}</h2>
+
+
+<p>
+${data.nome || ""}
+</p>
+
+
+<p>
 ${data.mensagem || ""}
+</p>
+
+
+</div>
 
 `;
 
+
+
 }
+
+
+
+pararScanner();
+
+
+
+document.getElementById("btnNova").style.display = "inline-block";
+
 
 
 })
@@ -145,41 +273,99 @@ ${data.mensagem || ""}
 .catch(error => {
 
 
+
 document.getElementById("resultado").innerHTML =
 
-"❌ Erro de comunicação com o servidor";
+
+`
+
+<div class="erro">
+
+<h2>❌ Erro</h2>
+
+Erro de comunicação com o servidor.
+
+</div>
+
+`;
+
+
+
+processando = false;
+
 
 
 });
 
 
+
 }
+
 
 
 
 function erroLeitura(error){
 
-// Ignora erros normais durante a busca do QR
+// Ignora erros durante procura do QR
 
 }
 
 
 
-const scanner = new Html5QrcodeScanner(
+
+function pararScanner(){
+
+
+if(scanner){
+
+
+scanner.clear();
+
+}
+
+
+}
+
+
+
+
+function novaLeitura(){
+
+
+processando = false;
+
+
+document.getElementById("resultado").innerHTML =
+
+"Aponte a câmera para o QR Code";
+
+
+document.getElementById("btnNova").style.display =
+"none";
+
+
+
+iniciarScanner();
+
+
+}
+
+
+
+
+function iniciarScanner(){
+
+
+
+scanner = new Html5QrcodeScanner(
 
 "reader",
 
 {
 
-fps: 10,
+fps:10,
 
-qrbox: {
-
-width: 250,
-
-height: 250
-
-}
+qrbox:250
 
 }
 
@@ -194,6 +380,14 @@ sucesso,
 erroLeitura
 
 );
+
+
+
+}
+
+
+
+iniciarScanner();
 
 
 
