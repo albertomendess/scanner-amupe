@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 
@@ -15,18 +16,31 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
   padding: 20px;
+  background: #f5f5f5;
+}
+
+h2 {
+  margin-bottom: 20px;
 }
 
 #reader {
+
   width: 100%;
   max-width: 400px;
   margin: auto;
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+
 }
 
 #resultado {
 
-margin-top:20px;
-font-size:18px;
+  margin-top: 20px;
+  font-size: 18px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
 
 }
 
@@ -40,7 +54,9 @@ font-size:18px;
 
 <h2>Credenciamento AMUPE</h2>
 
+
 <div id="reader"></div>
+
 
 <div id="resultado">
 Aponte a câmera para o QR Code
@@ -63,9 +79,25 @@ document.getElementById("resultado").innerHTML =
 "Consultando participante...";
 
 
-fetch(API + "?id=" + encodeURIComponent(qrCode))
+// Extrai somente o ID do participante
+let id = qrCode;
+
+
+if(qrCode.includes("?id=")){
+
+  id = qrCode.split("?id=")[1];
+
+}
+
+
+// Envia para o Apps Script
+
+fetch(
+  API + "?id=" + encodeURIComponent(id)
+)
 
 .then(response => response.json())
+
 
 .then(data => {
 
@@ -74,16 +106,19 @@ if(data.status){
 
 
 document.getElementById("resultado").innerHTML =
+
 `
 <h3>✅ ${data.titulo}</h3>
 
-Nome: ${data.nome}<br>
+<strong>Nome:</strong> ${data.nome}<br>
 
-Município: ${data.municipio}<br>
+<strong>Município:</strong> ${data.municipio}<br>
 
-Horário: ${new Date(data.horario).toLocaleString()}
+<strong>Horário:</strong> ${new Date(data.horario).toLocaleString("pt-BR")}
 
 `;
+
+
 
 }
 
@@ -91,11 +126,12 @@ else{
 
 
 document.getElementById("resultado").innerHTML =
+
 `
 <h3>⚠️ ${data.titulo}</h3>
 
-${data.nome || ""}
-<br>
+${data.nome ? "<strong>Nome:</strong> " + data.nome + "<br>" : ""}
+
 ${data.mensagem || ""}
 
 `;
@@ -106,15 +142,24 @@ ${data.mensagem || ""}
 })
 
 
-.catch(error=>{
+.catch(error => {
 
 
 document.getElementById("resultado").innerHTML =
-"Erro de comunicação";
+
+"❌ Erro de comunicação com o servidor";
 
 
 });
 
+
+}
+
+
+
+function erroLeitura(error){
+
+// Ignora erros normais durante a busca do QR
 
 }
 
@@ -126,9 +171,15 @@ const scanner = new Html5QrcodeScanner(
 
 {
 
-fps:10,
+fps: 10,
 
-qrbox:250
+qrbox: {
+
+width: 250,
+
+height: 250
+
+}
 
 }
 
@@ -140,11 +191,10 @@ scanner.render(
 
 sucesso,
 
-error => {
-
-}
+erroLeitura
 
 );
+
 
 
 </script>
@@ -153,3 +203,4 @@ error => {
 </body>
 
 </html>
+```
