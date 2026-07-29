@@ -130,6 +130,35 @@ button {
 
 <div id="reader"></div>
 
+<hr style="margin:30px 0;">
+
+<h3>Não possui o QR Code?</h3>
+
+<p>
+Digite os <b>4 últimos números</b> da inscrição.
+</p>
+
+<input
+    id="codigoManual"
+    type="text"
+    maxlength="4"
+    placeholder="0001"
+    style="
+        width:180px;
+        padding:12px;
+        font-size:22px;
+        text-align:center;
+        border-radius:8px;
+        border:1px solid #CCC;
+    ">
+
+<br><br>
+
+<button onclick="confirmarManual()">
+
+Confirmar Presença
+
+</button>
 
 <div id="resultado"></div>
 
@@ -175,136 +204,93 @@ status.className = classe;
 
 
 
-
 function sucesso(qrCode){
 
+    if(processando){
+        return;
+    }
 
+    processando = true;
 
-if(processando){
+    alterarStatus(
+        "🟡 Consultando participante...",
+        "processando"
+    );
 
-return;
+    let id = qrCode;
 
-}
+    if(qrCode.includes("?id=")){
+        id = qrCode.split("?id=")[1];
+    }
 
-
-
-processando=true;
-
-
-
-alterarStatus(
-
-"🟡 Consultando participante...",
-
-"processando"
-
-);
-
-
-
-let id = qrCode;
-
-
-
-if(qrCode.includes("?id=")){
-
-
-id = qrCode.split("?id=")[1];
-
+    registrarCodigo(id);
 
 }
 
 
+function registrarCodigo(id){
 
-fetch(
+    fetch(
+        API + "?id=" + encodeURIComponent(id)
+    )
 
-API + "?id=" + encodeURIComponent(id)
+    .then(response => response.json())
 
-)
+    .then(data => {
 
+        if(data.status){
 
+            somSucesso();
 
-.then(response => response.json())
+            alterarStatus(
+                "🟢 Presença confirmada",
+                "sucesso"
+            );
 
+        }else{
 
+            alterarStatus(
+                "🔴 Usuário já processado",
+                "erro"
+            );
 
-.then(data => {
+        }
 
+        document.getElementById("resultado").innerHTML = `
 
+            <h2>${data.titulo}</h2>
 
-if(data.status){
+            <p><b>Nome:</b><br>${data.nome || ""}</p>
 
+            <p><b>Município:</b><br>${data.municipio || ""}</p>
 
-somSucesso();
+            <p><b>Horário:</b><br>${data.horario || ""}</p>
 
+        `;
 
-alterarStatus(
+        pararScanner();
 
-"🟢 Presença confirmada",
+        document.getElementById("novo").style.display = "inline-block";
 
-"sucesso"
+        document.getElementById("codigoManual").value = "";
+        document.getElementById("codigoManual").focus();
 
-);
+    })
 
+    .catch(error=>{
 
+        alterarStatus(
+            "🔴 Erro de comunicação",
+            "erro"
+        );
 
-document.getElementById("resultado").innerHTML =
+        console.error(error);
 
-`
+        processando = false;
 
-<h2>✅ ${data.titulo}</h2>
-
-<p>
-<b>Nome:</b><br>
-${data.nome}
-</p>
-
-<p>
-<b>Município:</b><br>
-${data.municipio}
-</p>
-
-<p>
-<b>Horário:</b><br>
-${new Date(data.horario)
-.toLocaleString("pt-BR")}
-</p>
-
-`;
-
-
-
-}
-
-else{
-
-
-alterarStatus(
-
-"🔴 Usuário já processado",
-
-"erro"
-
-);
-
-
-
-document.getElementById("resultado").innerHTML =
-
-`
-
-<h2>⚠️ ${data.titulo}</h2>
-
-<p>
-${data.nome || ""}
-</p>
-
-`;
-
-
+    });
 
 }
-
 
 
 pararScanner();
@@ -448,6 +434,34 @@ sucesso,
 }
 
 
+
+function confirmarManual(){
+
+    let codigo =
+        document
+        .getElementById("codigoManual")
+        .value
+        .trim();
+
+    if(codigo===""){
+
+        alert("Informe o código.");
+
+        return;
+
+    }
+
+    if(!codigo.startsWith("AMUPE-")){
+
+        codigo =
+            "AMUPE-2026-" +
+            codigo.padStart(4,"0");
+
+    }
+
+    registrarCodigo(codigo);
+
+}
 
 iniciarScanner();
 
