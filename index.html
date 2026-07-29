@@ -142,6 +142,9 @@ Digite os <b>4 últimos números</b> da inscrição.
     id="codigoManual"
     type="text"
     maxlength="4"
+    onkeydown="if(event.key==='Enter')confirmarManual()"
+    inputmode="numeric"
+    pattern="[0-9]*"
     placeholder="0001"
     style="
         width:180px;
@@ -267,30 +270,6 @@ function registrarCodigo(id){
             <p><b>Horário:</b><br>${data.horario || ""}</p>
 
         `;
-
-        pararScanner();
-
-        document.getElementById("novo").style.display = "inline-block";
-
-        document.getElementById("codigoManual").value = "";
-        document.getElementById("codigoManual").focus();
-
-    })
-
-    .catch(error=>{
-
-        alterarStatus(
-            "🔴 Erro de comunicação",
-            "erro"
-        );
-
-        console.error(error);
-
-        processando = false;
-
-    });
-
-}
 
 
 pararScanner();
