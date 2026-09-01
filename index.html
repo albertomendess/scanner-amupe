@@ -1,454 +1,385 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#1a73e8" />
+  <title>Credenciamento AMUPE</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --success: #166534;
+      --success-bg: #dcfce7;
+      --error: #991b1b;
+      --error-bg: #fee2e2;
+      --warning: #92400e;
+      --warning-bg: #fef3c7;
+      --info: #1d4ed8;
+      --info-bg: #dbeafe;
+      --bg: #f0f4f8;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --radius: 14px;
+    }
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    * { box-sizing: border-box; }
 
-<title>Credenciamento AMUPE</title>
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      text-align: center;
+      min-height: 100vh;
+    }
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    h1 {
+      font-size: 1.4rem;
+      margin: 8px 0 4px;
+      font-weight: 700;
+    }
 
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
 
-<style>
+    #status {
+      padding: 14px 18px;
+      border-radius: var(--radius);
+      margin: 0 auto 16px;
+      max-width: 420px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      transition: background 0.2s, color 0.2s;
+    }
 
-body {
+    .aguardando { background: var(--info-bg); color: var(--info); }
+    .processando { background: var(--warning-bg); color: var(--warning); }
+    .sucesso { background: var(--success-bg); color: var(--success); }
+    .erro { background: var(--error-bg); color: var(--error); }
 
-  font-family: Arial, sans-serif;
-  text-align: center;
-  margin: 0;
-  padding: 15px;
-  background: #f2f2f2;
+    #reader {
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto 12px;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
 
-}
+    /* Ajustes do html5-qrcode */
+    #reader video { border-radius: var(--radius) !important; }
+    #reader__dashboard_section { padding: 8px 0 !important; }
+    #reader__dashboard_section_csr button,
+    #reader__dashboard_section_swaplink {
+      border-radius: 8px !important;
+    }
 
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px;
+      max-width: 420px;
+      margin: 16px auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      text-align: left;
+    }
 
-h1 {
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      text-align: center;
+    }
 
-  font-size: 24px;
+    .card p {
+      margin: 0 0 12px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+    }
 
-}
+    #codigoManual {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.25rem;
+      text-align: center;
+      border-radius: 10px;
+      border: 1.5px solid #d1d5db;
+      outline: none;
+      letter-spacing: 1px;
+    }
 
+    #codigoManual:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+    }
 
-#status {
+    .btn {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 14px 22px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s;
+      width: 100%;
+    }
 
-  padding: 15px;
-  border-radius: 10px;
-  margin: 15px auto;
-  max-width: 400px;
-  font-size: 20px;
-  font-weight: bold;
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-}
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
 
+    .btn-secondary {
+      background: #e5e7eb;
+      color: var(--text);
+      margin-top: 10px;
+    }
 
-.aguardando {
+    #resultado {
+      max-width: 420px;
+      margin: 16px auto 0;
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      text-align: left;
+      display: none;
+    }
 
-  background: #dbeafe;
-  color: #1d4ed8;
+    #resultado.visible { display: block; }
 
-}
+    #resultado h2 {
+      margin: 0 0 12px;
+      font-size: 1.15rem;
+      text-align: center;
+    }
 
+    #resultado .linha {
+      margin: 8px 0;
+      font-size: 0.95rem;
+    }
 
-.processando {
+    #resultado .linha b {
+      color: var(--muted);
+      font-weight: 600;
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
 
-  background: #fef3c7;
-  color: #92400e;
+    #novo {
+      display: none;
+      max-width: 420px;
+      margin: 12px auto 0;
+    }
 
-}
+    #novo.visible { display: block; }
 
-
-.sucesso {
-
-  background: #dcfce7;
-  color: #166534;
-
-}
-
-
-.erro {
-
-  background: #fee2e2;
-  color: #991b1b;
-
-}
-
-
-
-#reader {
-
-  width: 100%;
-  max-width: 450px;
-  margin:auto;
-
-}
-
-
-
-#resultado {
-
-  margin-top:15px;
-  background:white;
-  border-radius:10px;
-  padding:15px;
-  font-size:18px;
-
-}
-
-
-
-button {
-
-  margin-top:20px;
-  padding:15px 25px;
-  font-size:18px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-
-}
-
-
-</style>
-
-
+    .footer {
+      margin-top: 28px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
 </head>
-
-
 <body>
 
+  <h1>📋 Credenciamento AMUPE</h1>
+  <p class="subtitle">Aproxime o QR Code da câmera</p>
 
-<h1>📋 Credenciamento AMUPE</h1>
+  <div id="status" class="aguardando">🔵 Aguardando QR Code</div>
 
+  <div id="reader"></div>
 
-<div id="status" class="aguardando">
+  <div class="card">
+    <h3>Não possui o QR Code?</h3>
+    <p>Digite o código completo<br><small>(ex: AMUPE-JSS-0001)</small><br>ou apenas os 4 últimos números</p>
+    <input
+      id="codigoManual"
+      type="text"
+      inputmode="text"
+      autocomplete="off"
+      placeholder="AMUPE-XXX-0001 ou 0001"
+      onkeydown="if(event.key==='Enter')confirmarManual()"
+    />
+    <button class="btn btn-primary" id="btnManual" onclick="confirmarManual()">
+      Confirmar Presença
+    </button>
+  </div>
 
-🔵 Aguardando QR Code
+  <div id="resultado"></div>
 
-</div>
+  <button id="novo" class="btn btn-secondary" onclick="novaLeitura()">
+    🔄 Nova leitura
+  </button>
 
+  <p class="footer">AMUPE · Sistema de Credenciamento</p>
 
-<div id="reader"></div>
+  <script>
+    // ============================================================
+    // CONFIGURAÇÃO – esta URL será injetada pela Streamlit (Sessão 3)
+    // ============================================================
+    const API = "https://script.google.com/macros/s/AKfycbwFoBHeju5TzLtupA1RSvJwU-quReg-ZbM2p1GA8lnyjBT_ORjZ2Wq5CYpcM2kicCp3/exec";
 
-<hr style="margin:30px 0;">
+    let processando = false;
+    let scanner = null;
 
-<h3>Não possui o QR Code?</h3>
-
-<p>
-Digite os <b>4 últimos números</b> da inscrição.
-</p>
-
-<input
-    id="codigoManual"
-    type="text"
-    maxlength="4"
-    onkeydown="if(event.key==='Enter')confirmarManual()"
-    inputmode="numeric"
-    pattern="[0-9]*"
-    placeholder="0001"
-    style="
-        width:180px;
-        padding:12px;
-        font-size:22px;
-        text-align:center;
-        border-radius:8px;
-        border:1px solid #CCC;
-    ">
-
-<br><br>
-
-<button onclick="confirmarManual()">
-
-Confirmar Presença
-
-</button>
-
-<div id="resultado"></div>
-
-
-<button id="novo"
-onclick="novaLeitura()"
-style="display:none">
-
-Nova leitura
-
-</button>
-
-
-
-<script>
-
-
-const API =
-
-"https://script.google.com/macros/s/AKfycbwFoBHeju5TzLtupA1RSvJwU-quReg-ZbM2p1GA8lnyjBT_ORjZ2Wq5CYpcM2kicCp3/exec";
-
-
-
-let processando = false;
-
-let scanner;
-
-
-
-function alterarStatus(texto, classe){
-
-
-const status =
-document.getElementById("status");
-
-
-status.innerHTML = texto;
-
-status.className = classe;
-
-
-}
-
-
-
-function sucesso(qrCode){
-
-    if(processando){
-        return;
+    function alterarStatus(texto, classe) {
+      const el = document.getElementById("status");
+      el.innerHTML = texto;
+      el.className = classe;
     }
 
-    processando = true;
-
-    alterarStatus(
-        "🟡 Consultando participante...",
-        "processando"
-    );
-
-    let id = qrCode;
-
-    if(qrCode.includes("?id=")){
-        id = qrCode.split("?id=")[1];
+    function mostrarResultado(html) {
+      const el = document.getElementById("resultado");
+      el.innerHTML = html;
+      el.classList.add("visible");
     }
 
-    registrarCodigo(id);
+    function esconderResultado() {
+      const el = document.getElementById("resultado");
+      el.innerHTML = "";
+      el.classList.remove("visible");
+    }
 
-}
+    function sucesso(qrCode) {
+      if (processando) return;
+      processando = true;
 
+      alterarStatus("🟡 Consultando participante...", "processando");
 
-function registrarCodigo(id){
-
-    fetch(
-        API + "?id=" + encodeURIComponent(id)
-    )
-
-    .then(response => response.json())
-
-    .then(data => {
-
-        if(data.status){
-
-            somSucesso();
-
-            alterarStatus(
-                "🟢 Presença confirmada",
-                "sucesso"
-            );
-
-        }else{
-
-            alterarStatus(
-                "🔴 Usuário já processado",
-                "erro"
-            );
-
+      let id = qrCode;
+      if (qrCode.includes("?id=")) {
+        id = qrCode.split("?id=")[1].split("&")[0];
+      }
+      // Se o QR for a própria URL do scanner
+      try {
+        const url = new URL(qrCode);
+        if (url.searchParams.get("id")) {
+          id = url.searchParams.get("id");
         }
-
-        document.getElementById("resultado").innerHTML = `
-
-            <h2>${data.titulo}</h2>
-
-            <p><b>Nome:</b><br>${data.nome || ""}</p>
-
-            <p><b>Município:</b><br>${data.municipio || ""}</p>
-
-            <p><b>Horário:</b><br>${data.horario || ""}</p>
-
-        `;
-
-
-pararScanner();
-
-
-document.getElementById("novo")
-.style.display="inline-block";
-
-
-
-})
-
-
-
-.catch(()=>{
-
-
-alterarStatus(
-
-"🔴 Erro de comunicação",
-
-"erro"
-
-);
-
-
-
-processando=false;
-
-
-});
-
-
-
-}
-
-
-
-
-
-function pararScanner(){
-
-
-if(scanner){
-
-
-scanner.clear();
-
-
-}
-
-
-}
-
-
-
-
-function novaLeitura(){
-
-
-
-document.getElementById("resultado").innerHTML="";
-
-
-document.getElementById("novo")
-.style.display="none";
-
-
-processando=false;
-
-
-
-alterarStatus(
-
-"🔵 Aguardando QR Code",
-
-"aguardando"
-
-);
-
-
-
-iniciarScanner();
-
-
-}
-
-
-
-
-function somSucesso(){
-
-
-const audio =
-new Audio(
-
-"https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"
-
-);
-
-
-audio.play();
-
-
-}
-
-
-
-
-function iniciarScanner(){
-
-
-
-scanner = new Html5QrcodeScanner(
-
-"reader",
-
-{
-
-fps:10,
-
-qrbox:250,
-
-rememberLastUsedCamera:true
-
-}
-
-);
-
-
-
-scanner.render(
-
-sucesso,
-
-()=>{}
-
-);
-
-
-}
-
-
-
-function confirmarManual(){
-
-    let codigo =
-        document
-        .getElementById("codigoManual")
-        .value
-        .trim();
-
-    if(codigo===""){
-
+      } catch (e) {}
+
+      registrarCodigo(decodeURIComponent(id));
+    }
+
+    function registrarCodigo(id) {
+      document.getElementById("btnManual").disabled = true;
+
+      fetch(API + "?id=" + encodeURIComponent(id))
+        .then(r => r.json())
+        .then(data => {
+          if (data.status) {
+            somSucesso();
+            alterarStatus("🟢 Presença confirmada", "sucesso");
+          } else {
+            alterarStatus("🔴 " + (data.titulo || "Não foi possível confirmar"), "erro");
+          }
+
+          const grupoHtml = data.grupo
+            ? `<div class="linha"><b>Grupo</b>${data.grupo}</div>`
+            : "";
+
+          mostrarResultado(`
+            <h2>${data.titulo || ""}</h2>
+            <div class="linha"><b>Nome</b>${data.nome || "—"}</div>
+            <div class="linha"><b>Município</b>${data.municipio || "—"}</div>
+            <div class="linha"><b>Horário</b>${data.horario || "—"}</div>
+            ${grupoHtml}
+          `);
+
+          pararScanner();
+          document.getElementById("novo").classList.add("visible");
+        })
+        .catch(() => {
+          alterarStatus("🔴 Erro de comunicação com o servidor", "erro");
+          processando = false;
+          document.getElementById("btnManual").disabled = false;
+        });
+    }
+
+    function pararScanner() {
+      if (scanner) {
+        try {
+          scanner.clear().catch(() => {});
+        } catch (e) {}
+        scanner = null;
+      }
+    }
+
+    function novaLeitura() {
+      esconderResultado();
+      document.getElementById("novo").classList.remove("visible");
+      document.getElementById("btnManual").disabled = false;
+      document.getElementById("codigoManual").value = "";
+      processando = false;
+      alterarStatus("🔵 Aguardando QR Code", "aguardando");
+      iniciarScanner();
+    }
+
+    function somSucesso() {
+      try {
+        const audio = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
+        audio.volume = 0.7;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+
+    function iniciarScanner() {
+      if (scanner) return;
+
+      scanner = new Html5QrcodeScanner("reader", {
+        fps: 12,
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const size = Math.floor(minEdge * 0.7);
+          return { width: size, height: size };
+        },
+        rememberLastUsedCamera: true,
+        aspectRatio: 1.0,
+        showTorchButtonIfSupported: true
+      });
+
+      scanner.render(sucesso, () => {});
+    }
+
+    function confirmarManual() {
+      let codigo = document.getElementById("codigoManual").value.trim().toUpperCase();
+
+      if (!codigo) {
         alert("Informe o código.");
-
         return;
+      }
 
+      // Se digitou só os 4 números, monta um código antigo (compatibilidade)
+      // e também tenta o formato novo (o backend faz match exato)
+      if (/^\d{1,4}$/.test(codigo)) {
+        codigo = "AMUPE-XXX-" + codigo.padStart(4, "0");
+        // Aviso: o ideal é digitar o código completo (AMUPE-ABC-0001)
+        // porque o prefixo XXX não existe. Melhor orientar o usuário.
+        alert("Digite o código completo (ex: AMUPE-JSS-0001).\nOs 4 dígitos sozinhos só funcionam se o código tiver XXX.");
+        return;
+      }
+
+      // Remove espaços extras
+      codigo = codigo.replace(/\s+/g, "");
+
+      registrarCodigo(codigo);
     }
 
-    if(!codigo.startsWith("AMUPE-")){
-
-        codigo =
-            "AMUPE-2026-" +
-            codigo.padStart(4,"0");
-
-    }
-
-    registrarCodigo(codigo);
-
-}
-
-iniciarScanner();
-
-
-
-</script>
-
-
+    // Inicia
+    iniciarScanner();
+  </script>
 </body>
-
 </html>
