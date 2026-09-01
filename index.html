@@ -69,14 +69,12 @@
       margin: 0 auto 12px;
       border-radius: var(--radius);
       overflow: hidden;
+      background: #000;
     }
 
-    /* Ajustes do html5-qrcode */
-    #reader video { border-radius: var(--radius) !important; }
-    #reader__dashboard_section { padding: 8px 0 !important; }
-    #reader__dashboard_section_csr button,
-    #reader__dashboard_section_swaplink {
-      border-radius: 8px !important;
+    #reader video {
+      border-radius: var(--radius) !important;
+      object-fit: cover;
     }
 
     .card {
@@ -105,12 +103,13 @@
     #codigoManual {
       width: 100%;
       padding: 14px;
-      font-size: 1.25rem;
+      font-size: 1.35rem;
       text-align: center;
       border-radius: 10px;
       border: 1.5px solid #d1d5db;
       outline: none;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      font-weight: 600;
     }
 
     #codigoManual:focus {
@@ -204,13 +203,17 @@
 
   <div class="card">
     <h3>Não possui o QR Code?</h3>
-    <p>Digite o código completo<br><small>(ex: AMUPE-JSS-0001)</small><br>ou apenas os 4 últimos números</p>
+    <p>Digite apenas os <b>números finais</b> da inscrição<br>
+      <small>Exemplo: para <b>AMUPE-JSS-0004</b> digite <b>4</b> ou <b>0004</b></small>
+    </p>
     <input
       id="codigoManual"
       type="text"
-      inputmode="text"
+      inputmode="numeric"
+      pattern="[0-9]*"
       autocomplete="off"
-      placeholder="AMUPE-XXX-0001 ou 0001"
+      maxlength="6"
+      placeholder="4"
       onkeydown="if(event.key==='Enter')confirmarManual()"
     />
     <button class="btn btn-primary" id="btnManual" onclick="confirmarManual()">
@@ -233,7 +236,7 @@
     const API = "https://script.google.com/macros/s/AKfycbwFoBHeju5TzLtupA1RSvJwU-quReg-ZbM2p1GA8lnyjBT_ORjZ2Wq5CYpcM2kicCp3/exec";
 
     let processando = false;
-    let scanner = null;
+    let html5QrCode = null;
 
     function alterarStatus(texto, classe) {
       const el = document.getElementById("status");
@@ -253,23 +256,24 @@
       el.classList.remove("visible");
     }
 
-    function sucesso(qrCode) {
+    function onScanSuccess(decodedText) {
       if (processando) return;
       processando = true;
 
       alterarStatus("🟡 Consultando participante...", "processando");
+      pararScanner();
 
-      let id = qrCode;
-      if (qrCode.includes("?id=")) {
-        id = qrCode.split("?id=")[1].split("&")[0];
-      }
-      // Se o QR for a própria URL do scanner
-      try {
-        const url = new URL(qrCode);
-        if (url.searchParams.get("id")) {
-          id = url.searchParams.get("id");
+      let id = decodedText;
+
+      // Extrai ?id= se for uma URL
+      if (decodedText.includes("?id=")) {
+        try {
+          const url = new URL(decodedText);
+          id = url.searchParams.get("id") || decodedText.split("?id=")[1].split("&")[0];
+        } catch (e) {
+          id = decodedText.split("?id=")[1].split("&")[0];
         }
-      } catch (e) {}
+      }
 
       registrarCodigo(decodeURIComponent(id));
     }
@@ -299,7 +303,6 @@
             ${grupoHtml}
           `);
 
-          pararScanner();
           document.getElementById("novo").classList.add("visible");
         })
         .catch(() => {
@@ -310,11 +313,13 @@
     }
 
     function pararScanner() {
-      if (scanner) {
-        try {
-          scanner.clear().catch(() => {});
-        } catch (e) {}
-        scanner = null;
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          html5QrCode = null;
+        }).catch(() => {
+          html5QrCode = null;
+        });
       }
     }
 
@@ -337,48 +342,72 @@
     }
 
     function iniciarScanner() {
-      if (scanner) return;
+      if (html5QrCode) return;
 
-      scanner = new Html5QrcodeScanner("reader", {
-        fps: 12,
-        qrbox: function(viewfinderWidth, viewfinderHeight) {
-          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const size = Math.floor(minEdge * 0.7);
+      const readerEl = document.getElementById("reader");
+      readerEl.innerHTML = "";
+
+      html5QrCode = new Html5Qrcode("reader");
+
+      const config = {
+        fps: 20,                    // mais frames = detecção mais rápida
+        qrbox: function(w, h) {
+          const size = Math.floor(Math.min(w, h) * 0.75);
           return { width: size, height: size };
         },
-        rememberLastUsedCamera: true,
         aspectRatio: 1.0,
-        showTorchButtonIfSupported: true
-      });
+        disableFlip: false,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true  // usa API nativa quando disponível (bem mais rápida)
+        }
+      };
 
-      scanner.render(sucesso, () => {});
+      // Preferência: câmera traseira, resolução moderada (melhor desempenho)
+      const cameraConfig = {
+        facingMode: "environment"
+      };
+
+      html5QrCode.start(cameraConfig, config, onScanSuccess, () => {})
+        .catch(err => {
+          // Fallback: tenta qualquer câmera
+          Html5Qrcode.getCameras().then(cameras => {
+            if (cameras && cameras.length) {
+              html5QrCode.start(cameras[0].id, config, onScanSuccess, () => {})
+                .catch(() => {
+                  alterarStatus("🔴 Não foi possível acessar a câmera", "erro");
+                });
+            } else {
+              alterarStatus("🔴 Nenhuma câmera encontrada", "erro");
+            }
+          }).catch(() => {
+            alterarStatus("🔴 Erro ao iniciar a câmera", "erro");
+          });
+        });
     }
 
     function confirmarManual() {
-      let codigo = document.getElementById("codigoManual").value.trim().toUpperCase();
+      let valor = document.getElementById("codigoManual").value.trim();
 
-      if (!codigo) {
-        alert("Informe o código.");
+      if (!valor) {
+        alert("Informe o número da inscrição.");
         return;
       }
 
-      // Se digitou só os 4 números, monta um código antigo (compatibilidade)
-      // e também tenta o formato novo (o backend faz match exato)
-      if (/^\d{1,4}$/.test(codigo)) {
-        codigo = "AMUPE-XXX-" + codigo.padStart(4, "0");
-        // Aviso: o ideal é digitar o código completo (AMUPE-ABC-0001)
-        // porque o prefixo XXX não existe. Melhor orientar o usuário.
-        alert("Digite o código completo (ex: AMUPE-JSS-0001).\nOs 4 dígitos sozinhos só funcionam se o código tiver XXX.");
+      // Aceita só dígitos: 4 → 0004 | 12 → 0012 | 0004 → 0004
+      if (/^\d+$/.test(valor)) {
+        const numero = valor.replace(/^0+/, "") || "0";  // remove zeros à esquerda, mantém "0"
+        // Envia como "num:0004" para o backend reconhecer busca por sufixo
+        const padded = numero.padStart(4, "0");
+        registrarCodigo("num:" + padded);
         return;
       }
 
-      // Remove espaços extras
-      codigo = codigo.replace(/\s+/g, "");
-
-      registrarCodigo(codigo);
+      // Se colou o código completo
+      valor = valor.toUpperCase().replace(/\s+/g, "");
+      registrarCodigo(valor);
     }
 
-    // Inicia
+    // Inicia o scanner
     iniciarScanner();
   </script>
 </body>
